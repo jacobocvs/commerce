@@ -23,7 +23,7 @@ class Listing(models.Model):
     objects = ListingManager()
     
     def __str__(self):
-        return f"{self.title} - {self.starting_bid}"
+        return f"{self.id}: {self.title} - {self.active}"
 
 
 class Bid(models.Model):
@@ -33,7 +33,7 @@ class Bid(models.Model):
     listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="bids")
 
     def __str__(self):
-        return f"{self.amount} - {self.user} - {self.listing}"
+        return f"{self.id}: {self.amount} - {self.listing}"
 
 class Comment(models.Model):
     text = models.TextField()
@@ -42,4 +42,4 @@ class Comment(models.Model):
     listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="comments")
 
     def __str__(self):
-        return f"{self.text} - {self.user} - {self.listing}"
+        return f"{self.id}: {self.text} - {self.listing}"

@@ -6,9 +6,22 @@ from django.urls import reverse
 
 from .models import User, Listing, Comment, Bid
 
+import decimal
 
 def index(request):
-    return render(request, "auctions/index.html")
+    listings = Listing.objects.filter(active=True).all()
+    listings_bids = []
+
+    for listing in listings:
+        bids = Bid.objects.filter(listing=listing).all()
+        listings_bids.append({
+            "listing": listing,
+            "bids": bids
+        })
+
+    return render(request, "auctions/index.html" , {
+        "listings_bids": listings_bids,
+    })
 
 
 def login_view(request):
