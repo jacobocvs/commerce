@@ -6,7 +6,6 @@ from django.urls import reverse
 
 from .models import User, Listing, Comment, Bid
 
-import decimal
 
 def index(request):
     listings = Listing.objects.filter(active=True).all()
@@ -96,3 +95,24 @@ def createListing(request):
             })
         return HttpResponseRedirect(reverse("index"))
     return render(request, "auctions/create_listing.html")
+
+
+def listing(request, listing_id):
+    listing = Listing.objects.get(pk=listing_id)
+    comments = Comment.objects.filter(listing=listing).all()
+    try:
+        bids = Bid.objects.filter(listing=listing).latest('amount')
+        bids_counter = Bid.objects.filter(listing=listing).count()
+    except Bid.DoesNotExist:
+        bids = None
+        bids_counter = 0
+    return render(request, "auctions/listing.html", {
+        "listing": listing,
+        "comments": comments,
+        "bids": bids,
+        "bids_counter": bids_counter
+    })
+
+
+def watchlist(request):
+    return render(request, "auctions/watchlist.html")

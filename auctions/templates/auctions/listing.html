@@ -1,0 +1,18 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+
+<div class="card mb-3">
+    <img src="{{ listing.image_url }}" class="card-img-top" style="width: 400px; height: auto;">
+    <div class="card-body">
+      <h5 class="card-title">{{ listing.title }}</h5>
+      <p class="card-text">{{ listing.description }}</p>
+      {% if bids %}
+      <p class="card-text"><strong>Current bid: </strong>${{ bids.amount }}</p>
+        {% else %}
+        <p class="card-text"><strong>Current bid: </strong>${{ listing.starting_bid }}</p>
+        {% endif %}
+      <p class="card-text"><small class="text-muted">Last updated 3 mins ago</small></p>
+    </div>
+  </div>
+{% endblock %}

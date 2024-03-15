@@ -43,3 +43,10 @@ class Comment(models.Model):
 
     def __str__(self):
         return f"{self.id}: {self.text} - {self.listing}"
+
+class Watchlist(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="watchlists")
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="watchlists")
+
+    def __str__(self):
+        return f"{self.id}: {self.user} - {self.listing}"

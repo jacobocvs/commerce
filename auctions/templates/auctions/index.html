@@ -4,21 +4,21 @@
 <h2>Active Listings</h2>
 
 {% for item in listings_bids %}
-<div class="card mb-3" style="max-width: 90%;">
+<div class="card mb-3">
     <div class="row no-gutters">
         <div class="col-md-4 d-flex justify-content-center">
-            <img src="{{ item.listing.image_url }}" class="card-img" style="width: auto; height: 300px; ">
+            <img src="{{ item.listing.image_url }}" class="card-img">
         </div>
         <div class="col-md-8">
             <div class="card-body">
-                <h5 class="card-title">{{ item.listing.title }}</h5>
+                <h5 class="card-title"><a href="{% url 'listing' item.listing.id %}" >{{ item.listing.title }}</a></h5>
                 <p class="card-text">{{ item.listing.description }}</p>
                 {% if item.bids %}
                 {% for bid in item.bids %}
                 <p class="card-text"><strong>Current Bid: </strong>${{ bid.amount }}</p>
                 {% endfor %}
                 {% else %}
-                <p class="card-text"><strong>Starting Bid: </strong>${{ item.listing.starting_bid }}</p>
+                <p class="card-text"><strong>Current Bid: </strong>${{ item.listing.starting_bid }}</p>
                 {% endif %}
             </div>
         </div>
