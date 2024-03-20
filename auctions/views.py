@@ -10,10 +10,6 @@ from django import forms
 from .models import User, Listing, Bid, Watchlist, Comment
 
 
-class BidForm(forms.Form):
-    bid_amount = forms.DecimalField(label="Bid amount", max_digits=10, decimal_places=2, required=True, widget=forms.NumberInput(attrs={'step': '0.01'}) )
-
-
 def index(request):
     
     listings = Listing.objects.filter(active=True).all()
@@ -168,48 +164,55 @@ def place_bid(request, listing_id):
         user = request.user
         amount = request.POST["bid_amount"]
         current_bid = listing.bids.order_by('-amount').first()
-        form = BidForm(request.POST)
 
-        if form.is_valid():
-            if current_bid:
-                if float(amount) > float(current_bid.amount):
-                    try:
-                        bid = Bid.objects.create_bid(amount, user, listing)
-                        bid.save()
-                    except IntegrityError:
-                        return render(request, "auctions/listing.html", {
-                            "message": "Error placing bid.",
-                            "listing": listing,
-                            "form": form
-                        })
-                    return redirect("listing", listing_id, {"form": form})
-                else:
+        if current_bid:
+            if float(amount) > float(current_bid.amount):
+                try:
+                    bid = Bid.objects.create_bid(amount, user, listing)
+                    bid.save()
+                except IntegrityError:
                     return render(request, "auctions/listing.html", {
-                        "message": "Bid must be higher than current bid.",
+                        "message": "Error placing bid.",
                         "listing": listing,
-                        "form": form
                     })
+                return redirect("listing", listing_id)
             else:
-                if float(amount) > float(listing.starting_bid):
-                    try:
-                        bid = Bid.objects.create_bid(amount, user, listing)
-                        bid.save()
-                    except IntegrityError:
-                        return render(request, "auctions/listing.html", {
-                            "message": "Error placing bid.",
-                            "listing": listing,
-                            "form": form
-                        })
-                    return redirect("listing", listing_id, {"form": form})
-                else:
+                return render(request, "auctions/listing.html", {
+                    "message": "Bid must be higher than current bid.",
+                    "listing": listing,
+                })
+        else:
+            if float(amount) > float(listing.starting_bid):
+                try:
+                    bid = Bid.objects.create_bid(amount, user, listing)
+                    bid.save()
+                except IntegrityError:
                     return render(request, "auctions/listing.html", {
-                        "message": "Bid must be higher than starting bid.",
+                        "message": "Error placing bid.",
                         "listing": listing,
-                        "form": form
                     })
-        messages.success(request, 'Bid placed successfully')
-        return redirect("listing", listing_id, {"form": form})
-    else:
-        form = BidForm()
+                return redirect("listing", listing_id)
+            else:
+                return render(request, "auctions/listing.html", {
+                    "message": "Bid must be higher than starting bid.",
+                    "listing": listing,
+                })
 
-    return render(request, "auctions/listing.html", {"form": form})
+    return render(request, "auctions/listing.html")
+
+
+@login_required
+def close_listing(request, listing_id):
+    listing = Listing.objects.get(pk=listing_id)
+    listing.active = False
+    listing.save()
+
+    try:
+        winner = Bid.objects.filter(listing=listing).latest('amount')
+        winner = winner.user
+    except Bid.DoesNotExist:
+        winner = None
+    return redirect(request, "auctions/listing.html", {
+        "listing": listing,
+        "winner": winner
+    })
