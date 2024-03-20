@@ -14,9 +14,7 @@
                 <h5 class="card-title"><a href="{% url 'listing' item.listing.id %}" >{{ item.listing.title }}</a></h5>
                 <p class="card-text">{{ item.listing.description }}</p>
                 {% if item.bids %}
-                {% for bid in item.bids %}
-                <p class="card-text"><strong>Current Bid: </strong>${{ bid.amount }}</p>
-                {% endfor %}
+                <p class="card-text"><strong>Current Bid: </strong>${{ item.bids.amount }}</p>
                 {% else %}
                 <p class="card-text"><strong>Current Bid: </strong>${{ item.listing.starting_bid }}</p>
                 {% endif %}

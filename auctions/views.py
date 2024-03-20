@@ -1,18 +1,26 @@
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.urls import reverse
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django import forms
 
-from .models import User, Listing, Comment, Bid
+from .models import User, Listing, Bid, Watchlist, Comment
+
+
+class BidForm(forms.Form):
+    bid_amount = forms.DecimalField(label="Bid amount", max_digits=10, decimal_places=2, required=True, widget=forms.NumberInput(attrs={'step': '0.01'}) )
 
 
 def index(request):
+    
     listings = Listing.objects.filter(active=True).all()
     listings_bids = []
 
     for listing in listings:
-        bids = Bid.objects.filter(listing=listing).all()
+        bids = Bid.objects.filter(listing=listing).order_by('-amount').first()
         listings_bids.append({
             "listing": listing,
             "bids": bids
@@ -75,7 +83,6 @@ def register(request):
         return render(request, "auctions/register.html")
 
 
-
 def createListing(request):
     if request.method == "POST":
         title = request.POST["title"]
@@ -85,7 +92,6 @@ def createListing(request):
         image = request.POST["image_url"]
         user = request.user
 
-        # Attempt to create new listing
         try:
             listing = Listing.objects.create_listing(title, description, category, starting_bid, image, user)
             listing.save()
@@ -114,5 +120,96 @@ def listing(request, listing_id):
     })
 
 
+@login_required
+def add_watchlist(request, listing_id):
+    listing = Listing.objects.get(pk=listing_id)
+    user = request.user
+
+    try:
+        watchlist = Watchlist.objects.create_watchlist(listing, user)
+        watchlist.save()
+    except IntegrityError:
+            return render(request, "auctions/listing.html", {
+                "message": "Error adding to watchlist."
+            })
+    return redirect("watchlist")
+
+
+@login_required
 def watchlist(request):
-    return render(request, "auctions/watchlist.html")
+    user = request.user
+    watchlist = Watchlist.objects.filter(user=user).all()
+
+    for watch in watchlist:
+        listing = watch.listing
+        current_bid = listing.bids.order_by('-amount').first()
+        if current_bid:
+            watch.current_bid = current_bid.amount
+        else:
+            watch.current_bid = listing.starting_bid
+
+    return render(request, "auctions/watchlist.html", {
+        "watchlist": watchlist,
+    })
+
+
+@login_required
+def remove_from_watchlist(request, watch_id):
+    user = request.user
+    remove_watch = Watchlist.objects.filter(user=user, id=watch_id)
+    remove_watch.delete()
+    return redirect("watchlist")
+
+
+@login_required
+def place_bid(request, listing_id):
+    if request.method == "POST":
+        listing = Listing.objects.get(pk=listing_id)
+        user = request.user
+        amount = request.POST["bid_amount"]
+        current_bid = listing.bids.order_by('-amount').first()
+        form = BidForm(request.POST)
+
+        if form.is_valid():
+            if current_bid:
+                if float(amount) > float(current_bid.amount):
+                    try:
+                        bid = Bid.objects.create_bid(amount, user, listing)
+                        bid.save()
+                    except IntegrityError:
+                        return render(request, "auctions/listing.html", {
+                            "message": "Error placing bid.",
+                            "listing": listing,
+                            "form": form
+                        })
+                    return redirect("listing", listing_id, {"form": form})
+                else:
+                    return render(request, "auctions/listing.html", {
+                        "message": "Bid must be higher than current bid.",
+                        "listing": listing,
+                        "form": form
+                    })
+            else:
+                if float(amount) > float(listing.starting_bid):
+                    try:
+                        bid = Bid.objects.create_bid(amount, user, listing)
+                        bid.save()
+                    except IntegrityError:
+                        return render(request, "auctions/listing.html", {
+                            "message": "Error placing bid.",
+                            "listing": listing,
+                            "form": form
+                        })
+                    return redirect("listing", listing_id, {"form": form})
+                else:
+                    return render(request, "auctions/listing.html", {
+                        "message": "Bid must be higher than starting bid.",
+                        "listing": listing,
+                        "form": form
+                    })
+        messages.success(request, 'Bid placed successfully')
+        return redirect("listing", listing_id, {"form": form})
+    else:
+        form = BidForm()
+
+    return render(request, "auctions/listing.html", {"form": form})

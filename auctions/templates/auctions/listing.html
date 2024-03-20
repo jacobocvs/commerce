@@ -2,17 +2,40 @@
 
 {% block body %}
 
+{% if messages %}
+<div class="messages">
+    {% for message in messages %}
+    <div{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+
 <div class="card mb-3">
-    <img src="{{ listing.image_url }}" class="card-img-top" style="width: 400px; height: auto;">
-    <div class="card-body">
-      <h5 class="card-title">{{ listing.title }}</h5>
-      <p class="card-text">{{ listing.description }}</p>
-      {% if bids %}
-      <p class="card-text"><strong>Current bid: </strong>${{ bids.amount }}</p>
-        {% else %}
-        <p class="card-text"><strong>Current bid: </strong>${{ listing.starting_bid }}</p>
-        {% endif %}
-      <p class="card-text"><small class="text-muted">Last updated 3 mins ago</small></p>
-    </div>
+  <img src="{{ listing.image_url }}" class="card-img-top" style="width: 400px; height: auto;">
+  <div class="row mx-3">
+    <a href="{% url 'add_watchlist' listing.id %}" class="btn btn-primary">Add to Watchlist</a>
   </div>
+  <div class="card-body">
+    <h5 class="card-title">{{ listing.title }}</h5>
+    <p class="card-text">{{ listing.description }}</p>
+    {% if bids %}
+    <p class="card-text"><strong>Current bid: </strong>${{ bids.amount }}</p>
+    {% else %}
+    <p class="card-text"><strong>Current bid: </strong>${{ listing.starting_bid }}</p>
+    {% endif %}
+
+    {% if user.is_authenticated %}
+    <form action="{% url 'place_bid' listing.id %}" method="post">
+      {% csrf_token %}
+      {% if user == bids.user %}
+      <p>{{ bids_counter }} bid(s). Your bid is the current bid</p>
+      {% else %}
+      <p>{{ bids_counter }} bid(s).</p>
+      {% endif %}
+      {{ form }}
+      <button type="submit" class="btn btn-primary">Place bid</button>
+  </div>
+  </form>
+  {% endif %}
+</div>
 {% endblock %}

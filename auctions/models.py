@@ -26,12 +26,19 @@ class Listing(models.Model):
         return f"{self.id}: {self.title} - {self.active}"
 
 
+class BidManager(models.Manager):
+    def create_bid(self, amount, user, listing):
+        bid = self.create(amount=amount, user=user, listing=listing)
+        return bid
+
 class Bid(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="bids")
     listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="bids")
 
+    objects = BidManager()
+    
     def __str__(self):
         return f"{self.id}: {self.amount} - {self.listing}"
 
@@ -44,9 +51,16 @@ class Comment(models.Model):
     def __str__(self):
         return f"{self.id}: {self.text} - {self.listing}"
 
+class WatchlistManager(models.Manager):
+    def create_watchlist(self, listing, user):
+        watchlist = self.create(listing=listing, user=user)
+        return watchlist
+
 class Watchlist(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="watchlists")
     listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="watchlists")
 
+    objects = WatchlistManager()
+    
     def __str__(self):
         return f"{self.id}: {self.user} - {self.listing}"

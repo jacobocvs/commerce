@@ -2,4 +2,24 @@
 
 {% block body %}
 
+{% if user.is_authenticated %}
+
+{% for watch in watchlist %}
+<div class="card m-3">
+  <img src="{{ watch.listing.image_url }}" class="card-img-top" style="width: 400px; height: auto;">
+  <div class="card-body">
+    <h5 class="card-title"><a href="{% url 'listing' watch.listing.id %}">{{ watch.listing.title }}</a></h5>
+    <p class="card-text">{{ watch.listing.description }}</p>
+    <p class="card-text"><strong>Current bid: </strong>${{ watch.current_bid }}</p>
+  </div>
+  <div class="card-footer">
+    <a href="{% url 'remove_from_watchlist' watch.id %}" class="btn btn-danger">Remove from Watchlist</a>
+  </div>
+</div>
+
+{% endfor %}
+{% else %}
+<div class="card-body">
+  <h5 class="card-title">Please log in to view this listing</h5>
+{% endif %}
 {% endblock %}
